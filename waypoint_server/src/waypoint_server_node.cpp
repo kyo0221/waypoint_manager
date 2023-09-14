@@ -42,6 +42,7 @@ bool seg_flag = true;
 bool traffic_flag = true;
 bool skip_flag = false;
 bool obstacle_flag = true;
+bool detect_box_flag = true;
 
 // SKIP_WAYPOINT
 // skipWaypointする際の秒数指定
@@ -138,7 +139,8 @@ namespace waypoint_server
             switch_segmentation_service,
             stop_service,
             traffic_service,
-            clear_costmap_service;
+            clear_costmap_service,
+            detect_box_service;
         // config_service;
 
         NodeParameters param;
@@ -192,6 +194,7 @@ namespace waypoint_server
         void StopService();
         void ClearCostmapService();
         void skipWaypoint();
+        void detect_box();
 
         void publishGoal(),
             publishWaypoints(),
@@ -408,6 +411,8 @@ namespace waypoint_server
         stop_service = private_nh.serviceClient<std_srvs::SetBool>("/stop_service");
         traffic_service = private_nh.serviceClient<std_srvs::SetBool>("/traffic_service");
         clear_costmap_service = private_nh.serviceClient<std_srvs::Empty>("/move_base/clear_costmaps");
+        detect_box_service = private_nh.serviceClient<std_srvs::SetBool>(
+            "/detect_box");
 
         is_cancel.store(true);
         regist_goal_id.store(0);
@@ -534,6 +539,18 @@ namespace waypoint_server
             // ROS_INFO("Please call the ~/resume_waypoint service");
             seg_flag = false;
             switch_segmentation();
+        }
+        if (waypoint_map[router.getIndex()].properties["detect_box_ON"] == "true")
+        {
+            ROS_INFO("Current waypoint properties detect_box_ON is true");
+            detect_box_flag = true;
+            detect_box();
+        }
+        if (waypoint_map[router.getIndex()].properties["detect_box_OFF"] == "true")
+        {
+            ROS_INFO("Current waypoint properties detect_box_OFF is true");
+            detect_box_flag = false;
+            detect_box();
         }
         if (!router.forwardIndex())
         {
@@ -691,10 +708,10 @@ namespace waypoint_server
             distance_of_goal.y() = goal_Y - y;
             if (distance_of_goal.lpNorm<2>() < SKIP_RADIUS)
             {
-                // ROS_INFO("obstacle_detect!!!");
+                ROS_INFO("obstacle_detect!!!");
                 obstacle_flag = true;
                 break;
-                // count++;
+                count++;
             }
             else
             // {
@@ -922,6 +939,23 @@ namespace waypoint_server
         {
             data.request.data = false;
             switch_segmentation_service.call(data);
+        }
+    }
+
+    void Node::detect_box()
+    {
+        ROS_INFO("Called detect_box()");
+
+        std_srvs::SetBool data;
+        if (detect_box_flag)
+        {
+            data.request.data = true;
+            detect_box_service.call(data);
+        }
+        else
+        {
+            data.request.data = false;
+            detect_box_service.call(data);
         }
     }
 
