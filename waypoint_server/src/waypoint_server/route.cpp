@@ -283,7 +283,7 @@ namespace waypoint_server
 
     const bool Route::forwardIndex()
     {
-        if (route_indexes.size() - 1 <= current_index.load())
+        if (route_indexes.size() - forward_index <= current_index.load())
         {
             if (loop_mode.load())
             {
@@ -293,13 +293,15 @@ namespace waypoint_server
             is_finish.store(true);
             return SUCCESS;
         }
-        current_index.store(current_index.load() + 1);
+        current_index.store(current_index.load() + forward_index);
+        forward_index = 1;
         return SUCCESS;
     }
 
     const bool Route::backIndex()
     {
-        current_index.store(current_index.load() - 1);
+        current_index.store(current_index.load() - forward_index);
+        forward_index = 1;
         return SUCCESS;
     }
 

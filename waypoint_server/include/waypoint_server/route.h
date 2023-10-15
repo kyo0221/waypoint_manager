@@ -15,6 +15,8 @@ namespace waypoint_server
     public:
         using Data = std::vector<Map::Key>;
 
+        uint8_t forward_index = 1;
+
         static constexpr bool SUCCESS = true,
                               FAILED = false;
 

@@ -15,6 +15,7 @@ using namespace std;
 #include <std_msgs/Bool.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Float64.h>
+#include <std_msgs/UInt8.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -123,7 +124,8 @@ namespace waypoint_server
             erase_route_subscriber,
             insert_route_subscriber,
             cmd_vel_subscriber,
-            obstacle_pos_subscriber;
+            obstacle_pos_subscriber,
+            waypoint_forward_index_subscriber;
 
         ros::ServiceServer save_service,
             save_waypoints_service,
@@ -161,7 +163,8 @@ namespace waypoint_server
             eraseRoute(const std_msgs::String::ConstPtr &),
             insertRoute(const std_msgs::String::ConstPtr &),
             cmd_vel_(const geometry_msgs::Twist::ConstPtr &),
-            obstacle_pos(const obstacle_detector::Obstacles::ConstPtr &);
+            obstacle_pos(const obstacle_detector::Obstacles::ConstPtr &),
+            waypointForwardIndex(const std_msgs::UInt8::ConstPtr &);
 
         bool save(
             std_srvs::TriggerRequest &request,
@@ -369,6 +372,11 @@ namespace waypoint_server
             10,
             &Node::obstacle_pos,
             this);
+        waypoint_forward_index_subscriber = nh.subscribe<std_msgs::UInt8>(
+            "/waypoint_manager/waypoint_next_num",
+            10,
+            &Node::waypointForwardIndex,
+            this);
 
         save_service = private_nh.advertiseService(
             "save",
@@ -490,6 +498,10 @@ namespace waypoint_server
         ROS_INFO(
             "Goal reached %s from waypoint_server_node",
             router.getIndex().c_str());
+        if (router.forward_index != 1)
+        {
+            router.forward_index = 1;
+        }
         if (waypoint_map[router.getIndex()].properties["stop"] == "true")
         {
             ROS_INFO("Current waypoint properties stop is true");
@@ -724,6 +736,17 @@ namespace waypoint_server
             }
         }
         count = 0;
+    }
+
+    void Node::waypointForwardIndex(const std_msgs::UInt8::ConstPtr &msg)
+    {
+        if(msg->data != router.forward_index){
+            router.forward_index = msg->data;
+            ROS_INFO("set nextwaypoit index: %d", router.forward_index);
+        }
+        else{
+            ROS_WARN("nextwaypoint is already set %d", router.forward_index);
+        }
     }
 
     void Node::insertRoute(const std_msgs::String::ConstPtr &msg)
