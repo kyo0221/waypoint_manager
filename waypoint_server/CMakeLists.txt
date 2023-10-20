@@ -9,6 +9,7 @@ project(waypoint_server VERSION 0.0.0 LANGUAGES CXX)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
     roscpp
+    rospy
     std_msgs
     nav_msgs
     geometry_msgs
