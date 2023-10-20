@@ -23,12 +23,11 @@ class AreaSelectNode():
         self.B_waypoint = rospy.get_param("/area_select/bigining_area_B", 3)
         self.C_waypoint = rospy.get_param("/area_select/bigining_area_C", 1)
         self.skip_waypoint_num = rospy.Publisher("/waypoint_manager/waypoint_next_num", UInt8, queue_size=10)
-        self.vel_pub = rospy.Publisher("/area_select/rotate_vel", Twist, queue_size=10)
         self.tag_sub = rospy.Subscriber("/label_string", String, self.label_getter_cb)
-        self.result_sub = rospy.Subscriber("/detection_status", Bool, self.detect_result_cb)
         self.detect_box = rospy.Service('/detect_box', SetBool, self.detect_box_server)
         self.area_point = rospy.Service('/area_waypoint', SetBool, self.area_point_server)
-        self.area_select_sv = rospy.Service('/area_select/area_selector', SetBool, self.area_select_server)
+        self.result_sv = rospy.Service('/detect_result', SetBool, self.detect_result_server)
+        self.area_select_sv = rospy.Service('/area_select', SetBool, self.area_select_server)
         self.skip_waypoint= rospy.ServiceProxy('/waypoint_manager/waypoint_server/next_waypoint', Trigger)
 
 
@@ -71,11 +70,32 @@ class AreaSelectNode():
             return SetBoolResponse (True, 'start selecting area')
         else:
             self.select_exec = False
-            rospy.logwarn("start selecting area")
+            rospy.logwarn("not start selecting area")
             return SetBoolResponse(False, 'not start selecting area task')
-  
+
 
     def area_select_server(self, request):
+        if self.select_exec and request.data:
+            if self.area_select_flag:
+                rospy.loginfo("getting area tag...")
+                self.area_skip_seq = self.area_selector()
+                if self.area_skip_seq == "a" or "b" or "c":
+                    rospy.loginfo("area selected!")
+                    self.area_select_flag = False
+                else:
+                    rospy.logwarn("box not detected")
+                    self.return_nav_point_skip()
+                    self.area_select_flag = False
+            else:
+                rospy.logwarn("box not detected")
+                self.return_nav_point_skip()
+                self.area_select_flag = False
+        else:
+            rospy.logwarn("NOT EXECUTED select task yet")
+            return SetBoolResponse(False, 'NOT EXECUTE')
+    
+
+    def detect_result_server(self, request):
         if self.select_exec:
             if request.data:
                 self.area_select_flag = True
@@ -88,7 +108,7 @@ class AreaSelectNode():
             rospy.logwarn("NOT EXECUTED select task yet")
             return SetBoolResponse(False, 'NOT EXECUTE')
         
-        
+
     def area_selector(self):
         if self.area == 'tag_a':
             rospy.loginfo("select area A")
@@ -129,7 +149,7 @@ class AreaSelectNode():
         while self.unnece_area_point_flag:
                 if self.detect_box:
                     rospy.loginfo("unnecessary area waypoint wait from b")
-                    self.skip_waypoint_num.publish(self.C_waypoint -1)
+                    self.skip_waypoint_num.publish(self.C_waypoint - 1)
         
                     rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
                     try:
@@ -186,18 +206,7 @@ class AreaSelectNode():
             rospy.loginfo_once("---- area select process execute ----")
             rospy.loginfo("wait job...")
 
-            if self.area_select_flag:
-                rospy.loginfo("getting area tag...")
-                self.area_skip_seq = self.area_selector()
-                if self.area_skip_seq == "a" or "b" or "c":
-                    rospy.loginfo("area selected!")
-                    self.area_select_flag = False
-                else:
-                    rospy.logwarn("box not detected")
-                    self.return_nav_point_skip()
-                    self.area_select_flag = False
-
-
+            
             if self.detect_box_flag:
                 rospy.loginfo("box detect comparison...")
 
