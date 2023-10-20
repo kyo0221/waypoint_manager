@@ -12,11 +12,11 @@ import rospy
 class AreaSelectNode():
     def __init__(self):
         rospy.init_node('area_select', anonymous=True)
+        self.time = 0
         self.detect_box_flag =False
         self.area_select_sucess = False
         self.area_select_flag = False
         self.select_exec = False
-        self.box_get_closer = False
         self.area = ""
         self.area_skip_seq = ""
         self.A_waypoint = rospy.get_param("/area_select/bigining_area_A", 6)
@@ -41,23 +41,23 @@ class AreaSelectNode():
             rospy.logwarn_once("NOT EXECUTED select task yet")
 
 
-    def detect_result_cb(self, result):
-        if self.select_exec:
-            self.box_get_closer = result.data
-            rospy.loginfo("get detsction result %s" % self.area)
-        else:
-            rospy.logwarn_once("NOT EXECUTED select task yet")
-
-
     def detect_box_server(self, request):
         if self.select_exec:
             if request.data:
                 self.detect_box_flag = True
-                rospy.loginfo("start selecting area")
-                return SetBoolResponse (True, 'start selecting area')
+                rospy.loginfo("start box detect")
+
+                rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
+                try:
+                    self.skip_waypoint()
+                except rospy.ServiceException as err:
+                    rospy.logfatal("Service call failed: %s" %err)
+
+                return SetBoolResponse (True, 'start detect box')
             else:
-                rospy.logwarn("start selecting area")
-                return SetBoolResponse(False, 'not start selecting area task')
+                self.detect_box_flag = False
+                rospy.logwarn("not start box detect")
+                return SetBoolResponse(False, 'not start detect box')
         else:
             rospy.logwarn("NOT EXECUTED select task yet")
             return SetBoolResponse(False, 'NOT EXECUTE')
@@ -66,12 +66,12 @@ class AreaSelectNode():
     def area_point_server(self, request):
         if request.data:
             self.select_exec = True
-            rospy.loginfo("start selecting area")
-            return SetBoolResponse (True, 'start selecting area')
+            rospy.loginfo("start delivery area")
+            return SetBoolResponse (True, 'start delivery area')
         else:
             self.select_exec = False
-            rospy.logwarn("not start selecting area")
-            return SetBoolResponse(False, 'not start selecting area task')
+            rospy.logwarn("end delivery area")
+            return SetBoolResponse(False, 'end delivery area')
 
 
     def area_select_server(self, request):
@@ -100,10 +100,10 @@ class AreaSelectNode():
             if request.data:
                 self.area_select_flag = True
                 rospy.loginfo("start selecting area")
-                return SetBoolResponse (True, 'start selecting area')
+                return SetBoolResponse (True, 'detect success')
             else:
                 rospy.logwarn("start selecting area")
-                return SetBoolResponse(False, 'not start selecting area task')
+                return SetBoolResponse(False, 'detect failed')
         else:
             rospy.logwarn("NOT EXECUTED select task yet")
             return SetBoolResponse(False, 'NOT EXECUTE')
@@ -142,25 +142,14 @@ class AreaSelectNode():
         
         else:
             rospy.loginfo("detected failed")
-            return "failed"
-            
-    
-    def skip_area_(self):
-        while self.unnece_area_point_flag:
-                if self.detect_box:
-                    rospy.loginfo("unnecessary area waypoint wait from b")
-                    self.skip_waypoint_num.publish(self.C_waypoint - 1)
-        
-                    rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
-                    try:
-                        self.skip_waypoint()
-                    except rospy.ServiceException as err:
-                        rospy.logfatal("Service call failed: %s" %err)
-                    self.unnece_area_point_flag = False
-        return
+            self.skip_waypoint_num.publish(self.C_waypoint + self.B_waypoint)
 
-    def failed_seq(self):
-        rospy.logwarn("BOX DETECTION FAILED SEQUENSE EXECUTE")
+            rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
+            try:
+                self.skip_waypoint()
+            except rospy.ServiceException as err:
+                rospy.logfatal("Service call failed: %s" %err)
+            return "failed"
 
 
     def return_nav_point_skip(self):
@@ -171,7 +160,7 @@ class AreaSelectNode():
 
         elif self.area_skip_seq == 'b':
             rospy.loginfo("return navigation at area B")
-            self.skip_waypoint_num.publish(self.C_waypoint)
+            self.skip_waypoint_num.publish(self.A_waypoint)
         
             rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
             try:
@@ -179,7 +168,7 @@ class AreaSelectNode():
             except rospy.ServiceException as err:
                 rospy.logfatal("Service call failed: %s" %err)
             
-            self.skip_area_A()
+            self.skip_area()
             return 
 
         elif self.area_skip_seq == 'c':
@@ -192,42 +181,28 @@ class AreaSelectNode():
             except rospy.ServiceException as err:
                 rospy.logfatal("Service call failed: %s" %err)
 
-            self.skip_area_A()
+            self.skip_area()
             return 
 
         else:
             rospy.loginfo("return navigation with detection failed")
-            self.skip_area_A()
+            self.skip_waypoint_num.publish(self.C_waypoint + self.B_waypoint)
+
+            rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
+            try:
+                self.skip_waypoint()
+            except rospy.ServiceException as err:
+                rospy.logfatal("Service call failed: %s" %err)
+            self.skip_area()
             return 
 
 
     def loop(self):
-        while self.select_exec:
+        if self.select_exec:
             rospy.loginfo_once("---- area select process execute ----")
-            rospy.loginfo("wait job...")
-
-            
-            if self.detect_box_flag:
-                rospy.loginfo("box detect comparison...")
-
-                if self.box_get_closer:
-                    rospy.loginfo("waypoint skip for navigation")
-
-                    rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
-                    try:
-                        self.skip_waypoint()
-                    except rospy.ServiceException as err:
-                        rospy.logfatal("Service call failed: %s" %err)
-
-                else:
-                    rospy.loginfo("box detect failed next waypoint")
-
-                    rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
-                    try:
-                        self.skip_waypoint()
-                    except rospy.ServiceException as err:
-                        rospy.logfatal("Service call failed: %s" %err)
-
+            if self.time % 5 == 0:
+                rospy.loginfo("job progress")
+        self.time += DURATION
 
                 
 
