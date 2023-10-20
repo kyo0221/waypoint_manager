@@ -44,6 +44,8 @@ bool traffic_flag = true;
 bool skip_flag = false;
 bool obstacle_flag = true;
 bool detect_box_flag = true;
+bool area_select_flag = true;
+bool area_waypoint_flag = true;
 
 // SKIP_WAYPOINT
 // skipWaypointする際の秒数指定
@@ -142,7 +144,9 @@ namespace waypoint_server
             stop_service,
             traffic_service,
             clear_costmap_service,
-            detect_box_service;
+            detect_box_service, 
+            area_select_service, 
+            area_waypoint_service;
         // config_service;
 
         NodeParameters param;
@@ -198,6 +202,8 @@ namespace waypoint_server
         void ClearCostmapService();
         void skipWaypoint();
         void detect_box();
+        void area_select();
+        void area_waypoint();
 
         void publishGoal(),
             publishWaypoints(),
@@ -421,6 +427,10 @@ namespace waypoint_server
         clear_costmap_service = private_nh.serviceClient<std_srvs::Empty>("/move_base/clear_costmaps");
         detect_box_service = private_nh.serviceClient<std_srvs::SetBool>(
             "/detect_box");
+        area_select_service = private_nh.serviceClient<std_srvs::SetBool>(
+            "/area_select");
+        area_waypoint_service = private_nh.serviceClient<std_srvs::SetBool>(
+            "/area_waypoint");
 
         is_cancel.store(true);
         regist_goal_id.store(0);
@@ -563,6 +573,30 @@ namespace waypoint_server
             ROS_INFO("Current waypoint properties detect_box_OFF is true");
             detect_box_flag = false;
             detect_box();
+        }
+        if (waypoint_map[router.getIndex()].properties["area_select_ON"] == "true")
+        {
+            ROS_INFO("Current waypoint properties area_select_ON is true");
+            area_select_flag = true;
+            area_select();
+        }
+        if (waypoint_map[router.getIndex()].properties["area_select_OFF"] == "true")
+        {
+            ROS_INFO("Current waypoint properties area_select_OFF is true");
+            area_select_flag = false;
+            area_select();
+        }
+        if (waypoint_map[router.getIndex()].properties["area_waypoint_ON"] == "true")
+        {
+            ROS_INFO("Current waypoint properties area_waypoint_ON is true");
+            area_waypoint_flag = true;
+            area_waypoint();
+        }
+        if (waypoint_map[router.getIndex()].properties["area_waypoint_OFF"] == "true")
+        {
+            ROS_INFO("Current waypoint properties area_waypoint_OFF is true");
+            area_waypoint_flag = false;
+            area_waypoint();
         }
         if (!router.forwardIndex())
         {
@@ -979,6 +1013,40 @@ namespace waypoint_server
         {
             data.request.data = false;
             detect_box_service.call(data);
+        }
+    }
+
+    void Node::area_select()
+    {
+        ROS_INFO("Called area_select()");
+
+        std_srvs::SetBool data;
+        if (area_select_flag)
+        {
+            data.request.data = true;
+            area_select_service.call(data);
+        }
+        else
+        {
+            data.request.data = false;
+            area_select_service.call(data);
+        }
+    }
+
+    void Node::area_waypoint()
+    {
+        ROS_INFO("Called area_waypoint()");
+
+        std_srvs::SetBool data;
+        if (area_waypoint_flag)
+        {
+            data.request.data = true;
+            area_waypoint_service.call(data);
+        }
+        else
+        {
+            data.request.data = false;
+            area_waypoint_service.call(data);
         }
     }
 
