@@ -204,28 +204,14 @@ class AreaSelectNode():
     def area_selector(self):
         if self.area == 'tag_a':
             rospy.loginfo("select area A")
-            self.skip_waypoint_num.publish(self.C_waypoint + self.B_waypoint - 1)
-
-            rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
-            try:
-                self.skip_waypoint()
-            except rospy.ServiceException as err:
-                rospy.logfatal("Service call failed: %s" %err)
-
+            self.next_waypoint(self.C_waypoint + self.B_waypoint - 1)
             self.area = ""
             self.rest_point = self.A_search_waypoint
             return "a"
 
         elif self.area == 'tag_b':
             rospy.loginfo("select area B")
-            self.skip_waypoint_num.publish(self.C_waypoint - 1)
-
-            rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
-            try:
-                self.skip_waypoint()
-            except rospy.ServiceException as err:
-                rospy.logfatal("Service call failed: %s" %err)
-            
+            self.next_waypoint(self.C_waypoint - 1)
             self.area = ""
             self.rest_point = self.B_search_waypoint
             return "b"
@@ -238,13 +224,8 @@ class AreaSelectNode():
 
         else:
             rospy.logwarn("detected failed. return navigation")
-            self.skip_waypoint_num.publish(self.C_waypoint + self.B_waypoint + self.A_waypoint - 1)
+            self.next_waypoint(self.C_waypoint + self.B_waypoint + self.A_waypoint - 1)
 
-            rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
-            try:
-                self.skip_waypoint()
-            except rospy.ServiceException as err:
-                rospy.logfatal("Service call failed: %s" %err)
             return "failed"
 
 
@@ -252,38 +233,18 @@ class AreaSelectNode():
         rospy.loginfo("area skipping")
         if skip_label == 'skip_a':
             rospy.loginfo("skip area A")
-            self.skip_waypoint_num.publish(self.A_waypoint - 1)
-
-            rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
-            try:
-                self.skip_waypoint()
-            except rospy.ServiceException as err:
-                rospy.logfatal("Service call failed: %s" %err)
-
+            self.next_waypoint(self.A_waypoint - 1)
             return 
 
         elif skip_label == 'skip_b':
             rospy.loginfo("skip area B")
+            self.next_waypoint(self.B_waypoint - 1)
             self.skip_waypoint_num.publish(self.B_waypoint - 1)
-        
-            rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
-            try:
-                self.skip_waypoint()
-            except rospy.ServiceException as err:
-                rospy.logfatal("Service call failed: %s" %err)
-
             return
 
         elif skip_label == 'a':
             rospy.loginfo("skip outside area A")
-            self.skip_waypoint_num.publish(self.A_outside_waypoint + 1)
-
-            rospy.wait_for_service('waypoint_manager/waypoint_server/next_waypoint')
-            try:
-                self.skip_waypoint()
-            except rospy.ServiceException as err:
-                rospy.logfatal("Service call failed: %s" %err)
-
+            self.next_waypoint(self.A_outside_waypoint + 1)
             return
         
         else:
