@@ -236,7 +236,7 @@ class AreaSelectNode():
 
         else:
             rospy.logwarn("detected failed. return navigation")
-            self.next_waypoint(self.C_waypoint + self.B_waypoint + self.A_waypoint - 1)
+            self.next_waypoint(self.C_waypoint + self.B_waypoint - 1)
 
             return "failed"
 

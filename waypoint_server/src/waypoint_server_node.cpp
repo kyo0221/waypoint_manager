@@ -512,6 +512,18 @@ namespace waypoint_server
         {
             router.forward_index = 1;
         }
+        if (waypoint_map[router.getIndex()].properties["detect_box_ON"] == "true")
+        {
+            ROS_INFO("Current waypoint properties detect_box_ON is true");
+            detect_box_flag = true;
+            detect_box();
+        }
+        if (waypoint_map[router.getIndex()].properties["detect_box_OFF"] == "true")
+        {
+            ROS_INFO("Current waypoint properties detect_box_OFF is true");
+            detect_box_flag = false;
+            detect_box();
+        }
         if (waypoint_map[router.getIndex()].properties["stop"] == "true")
         {
             ROS_INFO("Current waypoint properties stop is true");
@@ -561,18 +573,6 @@ namespace waypoint_server
             // ROS_INFO("Please call the ~/resume_waypoint service");
             seg_flag = false;
             switch_segmentation();
-        }
-        if (waypoint_map[router.getIndex()].properties["detect_box_ON"] == "true")
-        {
-            ROS_INFO("Current waypoint properties detect_box_ON is true");
-            detect_box_flag = true;
-            detect_box();
-        }
-        if (waypoint_map[router.getIndex()].properties["detect_box_OFF"] == "true")
-        {
-            ROS_INFO("Current waypoint properties detect_box_OFF is true");
-            detect_box_flag = false;
-            detect_box();
         }
         if (waypoint_map[router.getIndex()].properties["area_select_ON"] == "true")
         {
