@@ -45,13 +45,13 @@ class AreaSelectNode():
         self.area_skip_seq = ""
 
         #define ros params
-        self.A_outside_waypoint = rospy.get_param("/area_select/outside_area_A", 3)
-        self.A_waypoint = rospy.get_param("/area_select/area_A", 2)
-        self.B_waypoint = rospy.get_param("/area_select/area_B", 4) - 1
-        self.C_waypoint = rospy.get_param("/area_select/area_C", 3)
+        self.A_outside_waypoint = rospy.get_param("/area_select/outside_area_A", 2)
+        self.A_waypoint = rospy.get_param("/area_select/area_A", 3)
+        self.B_waypoint = rospy.get_param("/area_select/area_B", 6) - 1
+        self.C_waypoint = rospy.get_param("/area_select/area_C", 6)
         self.A_search_waypoint = rospy.get_param("/area_select/search_waypoint_A", 3)
-        self.B_search_waypoint = rospy.get_param("/area_select/search_waypoint_B", 3)
-        self.C_search_waypoint = rospy.get_param("/area_select/search_waypoint_C", 3)
+        self.B_search_waypoint = rospy.get_param("/area_select/search_waypoint_B", 4)
+        self.C_search_waypoint = rospy.get_param("/area_select/search_waypoint_C", 4)
 
         #define ROS publisher
         self.skip_waypoint_num = rospy.Publisher("/waypoint_manager/waypoint_next_num", UInt8, queue_size=10)
@@ -78,6 +78,15 @@ class AreaSelectNode():
     def label_getter_cb(self, area_str):
         if self.select_exec:
             self.area = area_str.data
+            if 'tag_a' in self.area:
+                self.area = 'tag_a'
+            elif 'tag_b' in self.area:
+                self.area = 'tag_b'
+            elif 'tag_c' in self.area:
+                self.area = 'tag_c'
+            else:
+                self.area = 'false'
+
             rospy.loginfo("get area label %s" % self.area)
         else:
             rospy.logwarn("NOT EXECUTED select task yet")
