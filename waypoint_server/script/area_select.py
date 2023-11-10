@@ -45,13 +45,13 @@ class AreaSelectNode():
         self.area_skip_seq = ""
 
         #define ros params
-        self.A_outside_waypoint = rospy.get_param("/area_select/outside_area_A", 3)
-        self.A_waypoint = rospy.get_param("/area_select/area_A", 2)
-        self.B_waypoint = rospy.get_param("/area_select/area_B", 4) - 1
-        self.C_waypoint = rospy.get_param("/area_select/area_C", 3)
+        self.A_outside_waypoint = rospy.get_param("/area_select/outside_area_A", 2)
+        self.A_waypoint = rospy.get_param("/area_select/area_A", 3)
+        self.B_waypoint = rospy.get_param("/area_select/area_B", 6) - 1
+        self.C_waypoint = rospy.get_param("/area_select/area_C", 6)
         self.A_search_waypoint = rospy.get_param("/area_select/search_waypoint_A", 3)
-        self.B_search_waypoint = rospy.get_param("/area_select/search_waypoint_B", 3)
-        self.C_search_waypoint = rospy.get_param("/area_select/search_waypoint_C", 3)
+        self.B_search_waypoint = rospy.get_param("/area_select/search_waypoint_B", 4)
+        self.C_search_waypoint = rospy.get_param("/area_select/search_waypoint_C", 4)
 
         #define ROS publisher
         self.skip_waypoint_num = rospy.Publisher("/waypoint_manager/waypoint_next_num", UInt8, queue_size=10)
@@ -78,6 +78,15 @@ class AreaSelectNode():
     def label_getter_cb(self, area_str):
         if self.select_exec:
             self.area = area_str.data
+            if 'tag_a' in self.area:
+                self.area = 'tag_a'
+            elif 'tag_b' in self.area:
+                self.area = 'tag_b'
+            elif 'tag_c' in self.area:
+                self.area = 'tag_c'
+            else:
+                self.area = 'false'
+
             rospy.loginfo("get area label %s" % self.area)
         else:
             rospy.logwarn("NOT EXECUTED select task yet")
@@ -167,6 +176,7 @@ class AreaSelectNode():
             rospy.logwarn("NOT EXECUTED select task yet")
             return SetBoolResponse(False, 'NOT EXECUTE')
 
+
     # skip area waypoint flag select ROS server
     def switch_waypoint_server(self, point_status):
         if self.select_exec:
@@ -175,7 +185,7 @@ class AreaSelectNode():
                 rospy.loginfo("waypoint sw 1")
                 return SetBoolResponse(True, 'switch 1')
             else:
-                if self.area == 'a':
+                if self.area_skip_seq == 'a':
                     rospy.loginfo("not skip area A")
                     return SetBoolResponse(False, 'not skip')
                 else:
@@ -236,7 +246,7 @@ class AreaSelectNode():
 
         else:
             rospy.logwarn("detected failed. return navigation")
-            self.next_waypoint(self.C_waypoint + self.B_waypoint + self.A_waypoint - 1)
+            self.next_waypoint(self.C_waypoint + self.B_waypoint - 1)
 
             return "failed"
 
@@ -252,7 +262,6 @@ class AreaSelectNode():
         elif skip_label == 'skip_b':
             rospy.loginfo("skip area B")
             self.next_waypoint(self.B_waypoint - 1)
-            self.skip_waypoint_num.publish(self.B_waypoint - 1)
             return
 
         elif skip_label == 'a':
@@ -406,10 +415,12 @@ class AreaSelectNode():
                     if (self.rest_point-1) > 0:
                         rospy.loginfo("skip rest search waypoint")
                         self.rest_point = self.search_forward_seq(self.rest_point)
+                        self.search_box_next = False
                     else:
                         if self.area_skip_seq == "a":
                             rospy.loginfo("skip outside A")
                             self.skip_area(self.area_skip_seq)
+                            self.search_box_next = False
                         else:
                             self.rest_point = self.search_forward_seq(self.rest_point)
                             rospy.loginfo("skip rest search waypoint end!")
