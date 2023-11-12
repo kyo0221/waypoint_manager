@@ -50,7 +50,7 @@ class AreaSelectNode():
         self.B_waypoint = rospy.get_param("/area_select/area_B", 6) - 1
         self.C_waypoint = rospy.get_param("/area_select/area_C", 6)
         self.A_search_waypoint = rospy.get_param("/area_select/search_waypoint_A", 3)
-        self.B_search_waypoint = rospy.get_param("/area_select/search_waypoint_B", 4)
+        self.B_search_waypoint = rospy.get_param("/area_select/search_waypoint_B", 3)
         self.C_search_waypoint = rospy.get_param("/area_select/search_waypoint_C", 4)
 
         #define ROS publisher
@@ -202,7 +202,7 @@ class AreaSelectNode():
         if self.select_exec:
             self.prev_stop_data = status.data
             if self.prev_stop_data != self.stop_flag:
-                if (not self.area_select_flag) and self.area_select_success:
+                if self.area_select_success:
                     if status.data:
                         rospy.loginfo("stop point reached")
                         self.stop_flag = status.data
