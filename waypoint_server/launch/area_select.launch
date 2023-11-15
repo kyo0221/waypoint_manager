@@ -1,0 +1,6 @@
+<launch>
+    <arg name="delivary_config_file" default="$(find waypoint_server)/config/area/delivary_area_config.yaml"/>
+    <node pkg="waypoint_server" name="area_select" type="area_select.py" output="screen">
+        <rosparam command="load" file="$(arg delivary_config_file)"/>
+    </node>
+</launch>
