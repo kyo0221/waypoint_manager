@@ -1,0 +1,8 @@
+area_select:
+  /area_select/outside_area_A: 3
+  /area_select/area_A: 3
+  /area_select/area_B: 5
+  /area_select/area_C: 6
+  /area_select/search_waypoint_A: 3
+  /area_select/search_waypoint_B: 3
+  /area_select/search_waypoint_C: 4

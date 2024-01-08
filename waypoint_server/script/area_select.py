@@ -45,13 +45,13 @@ class AreaSelectNode():
         self.area_skip_seq = ""
 
         #define ros params
-        self.A_outside_waypoint = rospy.get_param("/area_select/outside_area_A", 2)
-        self.A_waypoint = rospy.get_param("/area_select/area_A", 3)
-        self.B_waypoint = rospy.get_param("/area_select/area_B", 6) - 1
-        self.C_waypoint = rospy.get_param("/area_select/area_C", 6)
-        self.A_search_waypoint = rospy.get_param("/area_select/search_waypoint_A", 3)
-        self.B_search_waypoint = rospy.get_param("/area_select/search_waypoint_B", 4)
-        self.C_search_waypoint = rospy.get_param("/area_select/search_waypoint_C", 4)
+        self.A_outside_waypoint = 2
+        self.A_waypoint = 3
+        self.B_waypoint = 6 - 1
+        self.C_waypoint = 6
+        self.A_search_waypoint = 3
+        self.B_search_waypoint = 3
+        self.C_search_waypoint = 4
 
         #define ROS publisher
         self.skip_waypoint_num = rospy.Publisher("/waypoint_manager/waypoint_next_num", UInt8, queue_size=10)
@@ -202,7 +202,7 @@ class AreaSelectNode():
         if self.select_exec:
             self.prev_stop_data = status.data
             if self.prev_stop_data != self.stop_flag:
-                if (not self.area_select_flag) and self.area_select_success:
+                if self.area_select_success:
                     if status.data:
                         rospy.loginfo("stop point reached")
                         self.stop_flag = status.data
@@ -380,6 +380,17 @@ class AreaSelectNode():
         return
 
 
+    #parameter getting function
+    def get_param(self):
+        self.A_outside_waypoint = rospy.get_param("/area_select/outside_area_A")
+        self.A_waypoint = rospy.get_param("/area_select/area_A")
+        self.B_waypoint = rospy.get_param("/area_select/area_B")
+        self.C_waypoint = rospy.get_param("/area_select/area_C")
+        self.A_search_waypoint = rospy.get_param("/area_select/search_waypoint_A")
+        self.B_search_waypoint = rospy.get_param("/area_select/search_waypoint_B")
+        self.C_search_waypoint = rospy.get_param("/area_select/search_waypoint_C")
+
+
     # main loop function
     def loop(self):
         if self.select_exec:
@@ -450,12 +461,15 @@ class AreaSelectNode():
 
             # sw_waypoint skip area B
             if self.sw_waypoint_label == "skip_b":
-                self.skip_area(self.sw_waypoint_label)
-                self.sw_waypoint_label = ""
+                if self.area_skip_seq == "b":
+                    rospy.loginfo("not skip area B")
+                else:
+                    self.skip_area(self.sw_waypoint_label)
+                    self.sw_waypoint_label = ""
 
 
         self.time += DURATION
-
+        rospy.loginfo(self.A_outside_waypoint)
 
 
 
@@ -464,6 +478,7 @@ if __name__ == '__main__':
     node = AreaSelectNode()
     DURATION = 1
     r = rospy.Rate(1 / DURATION)
+    node.get_param()
     while not rospy.is_shutdown():
         node.loop()
         r.sleep()
