@@ -880,7 +880,7 @@ namespace waypoint_server
         data.request.data = false;
         stop_service.call(data);
 
-        ClearCostmapService();
+        // ClearCostmapService();
 
         // start_time = time(NULL);
 
